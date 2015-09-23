@@ -10,7 +10,7 @@ CREATE TABLE villages (
   longitude real,
   latitude real,
   acid smallint,
-  district_key varchar(40) REFERENCES districts (district_key)
+  district_key varchar(40) 
 );
 
 -- Village per month table

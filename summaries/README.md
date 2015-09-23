@@ -79,6 +79,12 @@ deal with the large volume of data, but the scripts could be relatively easily
 adapted to another SQL database.
 
 To use redshift to create summaries, put the cleaned CSV data onto an S3
-bucket, and then use [summaries.sql](summaries.sql) to generate the summaries,
-replacing `credentials` in `summaries.sql` with your AWS credentials.
+bucket, and then, from this directory, run:
+
+```
+./config.js
+```
+
+This will output `summaries.configured.sql` (warning--this file will include
+your AWS credentials!), which you can then feed to an Amazon RedShift cluster
 

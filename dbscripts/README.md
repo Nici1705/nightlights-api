@@ -1,10 +1,13 @@
 # Database Setup
 
+These instructions cover 1) importing the summary data into the postgres database
+and 2) generating the vector tiles of village lights for upload to Mapbox.
+
 ## Dependencies
 
 Before running the `Makefile` make sure you have the following installed:
 - Postgres 9.0+ and PostGIS 2.1.7+
-- R 3.1.2
+- R 3.1.2 with the `tidyr` and `dplyr` packages installed
 - ogr2ogr
 - GNU parallel
 - tippecanoe (only if you're generating the sample village tileset)

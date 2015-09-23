@@ -19,18 +19,18 @@ data/sample.geojson: data/sample.csv
 data/sample.mbtiles: data/sample.geojson
 	 tippecanoe -l sample -Z 3 -z 8 -r 2.6 -f -o $@ $<
 
-.PHONY: boundaries boundaries_import boundaries_index csv_boundaries
+.PHONY: boundaries admin_import boundaries_import boundaries_index csv_boundaries
 # csv_boundaries is redundant target to create only the csvs
 csv_boundaries: $(BOUNDARIES_CSVS)
-boundaries_import: $(BOUNDARIES_CSVS)
+admin_import: $(BOUNDARIES_CSVS)
 	# Reset db
 	cat sql/init-postgis.sql sql/init-boundaries.sql | psql ${DATABASE_URL}
 	# Import data
 	cat data/districts_meta.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts
 	cat data/districts_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts_month
 	cat data/states_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} states_month
-	cat sql/add-boundaries-index.sql | psql ${DATABASE_URL}
-	# Import India admin boundaries from the GADM shapefiles
+# Import India admin boundaries from the GADM shapefiles
+boundaries_import: admin_import
 	shp2pgsql -s 4326 -W "LATIN1" -d data/DISTRICT_11.shp districts_boundaries | psql ${DATABASE_URL}
 	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
 boundaries_index:
