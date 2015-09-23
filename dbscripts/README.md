@@ -7,7 +7,7 @@ and 2) generating the vector tiles of village lights for upload to Mapbox.
 
 Before running the `Makefile` make sure you have the following installed:
 - Postgres 9.0+ and PostGIS 2.1.7+
-- R 3.1.2 with the `tidyr` and `dplyr` packages installed
+- R 3.1.2 with the `tidyr`, `dplyr`, and `jsonlite` packages installed
 - ogr2ogr
 - GNU parallel
 - tippecanoe (only if you're generating the sample village tileset)

@@ -17,7 +17,7 @@ data/sample.geojson: data/sample.csv
 	ogr2ogr -f "GeoJSON" $@ scripts/sample.vrt
 
 data/sample.mbtiles: data/sample.geojson
-	 tippecanoe -l sample -Z 3 -z 8 -r 2.6 -f -o $@ $<
+	 tippecanoe -l sample -Z 3 -z 8 -r 2 -m 4 -pd -f -o $@ $<
 
 .PHONY: boundaries admin_import boundaries_import boundaries_index csv_boundaries
 # csv_boundaries is redundant target to create only the csvs

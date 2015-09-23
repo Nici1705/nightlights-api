@@ -62,7 +62,7 @@ csvt <- "\"String\",\"String\",\"String\",\"Real\",\"Real\""
 for (col in colnames(sample_data)[-1:-5]) {
   csvt<-paste(csvt,"\"Real\"",sep=",")
 }
-write(csvt, './data/sample.csvt',row.names=F)
+write(csvt, './data/sample.csvt')
 
 # Write sample.csv
 write.csv(sample_data, './data/sample.csv',row.names=F)
