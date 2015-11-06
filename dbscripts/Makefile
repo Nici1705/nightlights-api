@@ -29,9 +29,9 @@ admin_import: $(BOUNDARIES_CSVS)
 	cat data/districts_meta.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts
 	cat data/districts_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts_month
 	cat data/states_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} states_month
-# Import India admin boundaries from the GADM shapefiles
+# Import India admin boundaries
 boundaries_import: admin_import
-	shp2pgsql -s 4326 -W "LATIN1" -d data/DISTRICT_11.shp districts_boundaries | psql ${DATABASE_URL}
+	shp2pgsql -s 4326 -W "LATIN1" -d data/districts_clipped.shp districts_boundaries | psql ${DATABASE_URL}
 	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
 boundaries_index:
 	cat ./sql/simplify-boundaries.sql | psql ${DATABASE_URL}

@@ -19,7 +19,7 @@ CREATE TABLE villages (
   name character varying(35),
   tot_pop real,
   state character varying(17),
-  district character varying(27),
+  district character varying(29),
   acid smallint
 );
 copy villages from VILLAGE_S3_URI credentials
@@ -37,14 +37,16 @@ CREATE TABLE nights (
 );
 copy nights from NIGHTLY_S3_URI credentials
 CREDENTIALS
-gzip csv null as '';
+gzip csv null as 'NA';
 
 CREATE TABLE villages_new (
   villagecode bigint primary key,
   longitude real,
   latitude real,
+  name character varying(35),
+  tot_pop real,
   state character varying(17),
-  district character varying(27),
+  district character varying(29),
   acid smallint
 )
 distkey(villagecode)
@@ -120,7 +122,7 @@ group by state, year, month, satellite, quintile;
 --- By District ---
 
 
-drop table districts;
+drop table if exists districts;
 create table districts
   distkey(district)
   sortkey(state, district, year, month)
@@ -143,7 +145,7 @@ from (
 group by state, district, year, month, satellite;
 
 
-drop table districts_distribution;
+drop table if exists districts_distribution;
 create table districts_distribution
   distkey(district)
   sortkey(state, district, year, month)
