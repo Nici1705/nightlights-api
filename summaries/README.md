@@ -2,11 +2,22 @@
 
 The monthly summary data needed by the nightlights-api are as follows:
 
+## Village metadata
+
 **`villages.csv`:** the villages, with location and region info.
 This file *should* have a header, and the following structure:
 ```
-villagecode,longitude,latitude,state,district,acid
+villagecode,longitude,latitude,name,tot_pop,state,district,acid
 ```
+
+To recreate this file from the village and district shapefiles:
+
+```sh
+ogr2ogr -f CSV villages.csv VillAC_ALLINDIA_ids_xy.shp -dialect SQLITE -sql "SELECT v.C_CODE01 as villagecode, v.LONGITUDE as longitude, v.LATITUDE as latitude, v.NAME as name, v.TOT_POP as tot_pop, d.STATE_UT as state, d.DISTRICT as district, v.AC_ID as acid  FROM VillAC_ALLINDIA_ids_xy v, 'districts_clipped.shp'.districts_clipped as d WHERE ST_Contains(d.Geometry, v.Geometry)"
+```
+
+
+## Summaries
 
 The following CSV files, containing the time series, should *not* have headers.
 

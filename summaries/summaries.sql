@@ -16,6 +16,8 @@ CREATE TABLE villages (
   villagecode bigint,
   longitude real,
   latitude real,
+  name character varying(35),
+  tot_pop real,
   state character varying(17),
   district character varying(27),
   acid smallint
