@@ -50,17 +50,23 @@ data/rggvy.csv:
 	./scripts/rggvy.R
 
 .PHONY: villages
-villages_import:
+villages_import: data/villages_meta.sql
 	# Reset db
 	cat sql/init-postgis.sql sql/init-villages.sql | psql ${DATABASE_URL}
-	# Village metadata
-	sed '1d;s/,NA,/,,/;/^NA,/d' data/villages.csv | awk 'BEGIN { FS=",";OFS=","; printf "COPY villages FROM STDIN WITH (FORMAT CSV,HEADER '\''FALSE'\'', NULL '\'''\'');\n";} \
-	  { d_key=(tolower($$4)"-"tolower($$5)); gsub(/ +/,"-",d_key); print $$1, $$2, $$3, $$6, d_key } END {print "\\.";}' | psql ${DATABASE_URL}
-	# Village by month data
+	# Import village metadata
+	cat data/villages_meta.sql | psql ${DATABASE_URL}
+	# Import village by month data
 	parallel --bar 'cat {} | gunzip | ./scripts/dbimport.sh ${DATABASE_URL} villages_month ' ::: data/months/*.gz
 villages_index:
 	# Index 
 	cat ./sql/add-villages-indexes.sql | psql ${DATABASE_URL}
+
+data/villages_meta.sql:
+	# Clean village metadata: replace NA with '', remove any commas within quotes, add district key
+	echo "CREATE TEMP TABLE villages_temp AS SELECT * FROM villages WITH NO DATA;" > data/villages_meta.sql
+	sed '1d;s/,NA,/,,/;/^NA,/d' data/villages.csv | awk -F'"' -v OFS='' '{ for (i=2; i<=NF; i+=2) gsub(",", "", $$i) } 1' | awk 'BEGIN { FS=",";OFS=","; printf "COPY villages_temp FROM STDIN WITH (FORMAT CSV,HEADER '\''FALSE'\'', NULL '\'''\'');\n ";} \
+		{ d_key=(tolower($$6)"-"tolower($$7)); gsub(/ +/,"-",d_key); print $$1, $$2, $$3, $$4, $$5, $$8, d_key } END {print "\\.";}' >> data/villages_meta.sql
+	echo "INSERT INTO villages SELECT DISTINCT ON (villagecode) * FROM villages_temp WHERE villagecode IS NOT NULL; DROP TABLE villages_temp;" >> data/villages_meta.sql
 
 villages: villages_import villages_index
 

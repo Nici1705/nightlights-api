@@ -7,8 +7,8 @@ DROP TABLE IF EXISTS states_month CASCADE;
 -- Contains districts
 
 CREATE TABLE districts (
-  district_key varchar(40) primary key,
-  district_name varchar(40),
+  district_key varchar(50) primary key,
+  district_name varchar(50),
   state_key varchar(20),
   state_name varchar(20)
 );
@@ -16,7 +16,7 @@ CREATE TABLE districts (
 -- District per month table
 
 CREATE TABLE districts_month (
-  key varchar(40) REFERENCES districts (district_key),
+  key varchar(50) REFERENCES districts (district_key),
   year smallint,
   month smallint,
   satellite varchar(10),
@@ -35,7 +35,7 @@ CREATE TABLE districts_month (
 -- State per month table
 
 CREATE TABLE states_month (
-  key varchar(40),
+  key varchar(50),
   year smallint,
   month smallint,
   satellite varchar(10),

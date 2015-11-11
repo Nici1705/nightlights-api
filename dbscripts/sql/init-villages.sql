@@ -9,14 +9,16 @@ CREATE TABLE villages (
   villagecode bigint primary key,
   longitude real,
   latitude real,
+  name varchar(35),
+  tot_pop real,
   acid smallint,
-  district_key varchar(40) 
+  district_key varchar(50) 
 );
 
 -- Village per month table
 
 CREATE TABLE villages_month (
-  villagecode bigint REFERENCES villages (villagecode),
+  villagecode bigint,
   year smallint,
   month smallint,
   satellite varchar(10),
