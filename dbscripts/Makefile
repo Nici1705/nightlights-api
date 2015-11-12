@@ -32,9 +32,9 @@ admin_import: $(BOUNDARIES_CSVS)
 # Import India admin boundaries
 boundaries_import: admin_import
 	shp2pgsql -s 4326 -W "LATIN1" -d data/districts_clipped.shp districts_boundaries | psql ${DATABASE_URL}
-	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
 boundaries_index:
-	cat ./sql/simplify-boundaries.sql | psql ${DATABASE_URL}
+	# Simplification and other geometry stuff
+	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
 	# Index
 	cat ./sql/add-boundaries-indexes.sql | psql ${DATABASE_URL}
 
