@@ -30,15 +30,20 @@ admin_import: $(BOUNDARIES_CSVS)
 	cat data/districts_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts_month
 	cat data/states_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} states_month
 # Import India admin boundaries
-boundaries_import: admin_import
-	shp2pgsql -s 4326 -W "LATIN1" -d data/districts_clipped.shp districts_boundaries_import | psql ${DATABASE_URL}
-boundaries_index:
-	# Simplification and other geometry stuff
+boundaries_import: data/boundaries
+	shp2pgsql -s 4326 -W "LATIN1" -d data/boundaries/districts.shp districts_boundaries_import | psql ${DATABASE_URL}
+	shp2pgsql -s 4326 -W "LATIN1" -d data/boundaries/states.shp states_boundaries_import | psql ${DATABASE_URL}
 	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
+boundaries_index: admin_import 
 	# Index
 	cat ./sql/add-boundaries-indexes.sql | psql ${DATABASE_URL}
-data/districts.topojson:
-	topojson -p -q 1e5 -s 3e-8 data/districts_clipped.shp > data/districts.topojson
+data/boundaries:
+	mkdir -p data/boundaries
+	topojson -p -q 1e5 -s 3e-8 data/districts_clipped.shp > data/boundaries/boundaries.topojson
+	topojson-merge --io=districts_clipped --oo=states -k d.properties.STATE_UT -p -o data/boundaries/boundaries.topojson -- data/boundaries/boundaries.topojson
+	topojson-geojson -o data/boundaries data/boundaries/boundaries.topojson
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/districts.shp data/districts_clipped.json
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/states.shp data/states.json
 boundaries: boundaries_import boundaries_index
 
 .PHONY: rggvy

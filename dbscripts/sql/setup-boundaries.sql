@@ -20,35 +20,34 @@ select
 from districts_boundaries_import
 group by state_key, district_key;
 
---- Simplify boundaries using a topology
--- Create a topology
---- select topology.droptopogeometrycolumn('public', 'districts_boundaries', 'topogeom');
---- select topology.DropTopology('districts_topo');
---- select topology.CreateTopology('districts_topo', find_srid('public', 'districts_boundaries', 'geom'));
---- -- Add a layer
---- select topology.addtopogeometrycolumn('districts_topo', 'public', 'districts_boundaries', 'topogeom', 'MULTIPOLYGON');
---- -- Populate the layer and the topology: this step takes a while.
---- UPDATE districts_boundaries SET topogeom = topology.toTopoGeom(geom, 'districts_topo', 1);
---- 
---- Simplify (see init-postgis.sql)
---- SELECT SimplifyEdgeGeom('districts_topo', edge_id, 0.01) FROM districts_topo.edge;
--- Convert the TopoGeometries to Geometries for visualization
--- ALTER TABLE districts_boundaries DROP COLUMN geom_simplified;
--- ALTER TABLE districts_boundaries ADD geom_simplified GEOMETRY;
--- UPDATE districts_boundaries SET geom_simplified = topogeom::geometry;
+create temp table states_meta on commit drop as
+SELECT state_key,
+  sum(tot_pop) as tot_pop,
+  sum(f_pop) as f_pop,
+  sum(tot_lit) as tot_lit
+FROM districts_boundaries
+GROUP BY state_key;
 
---- Dissolve districts into states
+create temp table states_merged on commit drop as
+select
+  lower(replace(sb.state_ut, ' ', '-')) as state_key,
+  ST_Union(sb.geom) as geom,
+  ST_Extent(sb.geom) as bbox
+from states_boundaries_import sb
+group by sb.state_ut;
 
 drop table if exists states_boundaries;
 create table states_boundaries as
 select
-  state_key,
-  sum(tot_pop) as tot_pop,
-  sum(f_pop) as f_pop,
-  sum(tot_lit) as tot_lit,
-  ST_Union(geom) as geom,
-  ST_Extent(bbox) as bbox
-from districts_boundaries
-group by state_key;
+  sb.state_key,
+  sb.geom,
+  sb.bbox,
+  sm.tot_pop,
+  sm.f_pop,
+  sm.tot_lit
+from states_meta sm join states_merged sb on sm.state_key = sb.state_key;
+
+DROP TABLE districts_boundaries_import;
+DROP TABLE states_boundaries_import;
 
 COMMIT;
