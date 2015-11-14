@@ -2,6 +2,7 @@
 /*global before, describe, it*/
 
 var server = require('../../');
+var topojson = require('topojson');
 
 describe('Boundaries endpoints', function () {
   var response = {};
@@ -10,18 +11,18 @@ describe('Boundaries endpoints', function () {
     hitEndpoint('/boundaries/states/gujarat', response);
 
     it('should contain the state and its districts', function (done) {
-      response.parsed.should.have.property('gujarat');
-      Object.keys(response.parsed).forEach(function (key) {
-        key.should.match(/^gujarat/);
+      response.parsed.objects.should.have.property('gujarat');
+      var subregions = topojson.feature(response.parsed, response.parsed.objects.subregions);
+      subregions.features.forEach(function (feat) {
+        feat.properties.key.should.match(/^gujarat/);
       });
       done();
     });
 
-    it('should include a GeoJSON `geometry` and metadata as `properties`',
+    it('should provide geometry and properties via topojson',
     function (done) {
-      for (let key in response.parsed) {
-        if (key === 'gujarat') { continue; }
-        let district = response.parsed[key];
+      var subregions = topojson.feature(response.parsed, response.parsed.objects.subregions);
+      subregions.features.forEach(function (district) {
         district.should.have.properties('geometry', 'properties');
         district.properties.should.have.properties(
           'state_key',
@@ -29,7 +30,7 @@ describe('Boundaries endpoints', function () {
           'name',
           'tot_pop'
         );
-      }
+      });
       done();
     });
   });
@@ -39,10 +40,10 @@ describe('Boundaries endpoints', function () {
 
     it('should include a GeoJSON `geometry` and metadata as `properties`',
     function (done) {
-      let states = Object.keys(response.parsed);
+      var subregions = topojson.feature(response.parsed, response.parsed.objects.subregions);
+      let states = subregions.features.map(function (feat) { return feat.properties.key; });
       states.should.containDeep([
         'andhra-pradesh',
-        'arunachal-pradesh',
         'jammu-&-kashmir',
         'karnataka',
         'kerala',
@@ -69,9 +70,9 @@ describe('Boundaries endpoints', function () {
         'haryana',
         'himachal-pradesh'
       ]);
-      states.forEach(function (key) {
-        response.parsed[key].should.have.properties('geometry', 'properties');
-        response.parsed[key].properties.should.have.properties(
+      subregions.features.forEach(function (feat) {
+        feat.should.have.properties('geometry', 'properties');
+        feat.properties.should.have.properties(
           'key',
           'name',
           'tot_pop'
