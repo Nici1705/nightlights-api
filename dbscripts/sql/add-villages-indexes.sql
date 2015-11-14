@@ -12,7 +12,7 @@ CREATE INDEX villages_month_year_month_villagecode_idx ON villages_month (villag
 
 --- Add foreign key constraint to villages_month; requires deleting any entries
 --- that don't appear in `villages`.
---- CREATE INDEX villages_villagecode_idx ON villages (villagecode);
+CREATE INDEX villages_villagecode_idx ON villages (villagecode);
 --- DELETE FROM villages_month WHERE villagecode NOT IN (SELECT v.villagecode FROM villages v);
 --- ALTER TABLE villages_month ADD CONSTRAINT villages_month_fk FOREIGN KEY (villagecode) REFERENCES villages (villagecode);
 
