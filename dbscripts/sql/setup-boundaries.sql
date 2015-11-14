@@ -1,3 +1,5 @@
+BEGIN;
+
 --- Generate district key
 ALTER TABLE districts_boundaries ADD COLUMN district_key varchar(50);
 UPDATE districts_boundaries SET
@@ -13,7 +15,8 @@ select
   avg(tot_pop) as tot_pop,
   avg(f_pop) as f_pop,
   avg(tot_lit) as tot_lit,
-  ST_Union(geom) as geom
+  ST_Union(geom) as geom,
+  ST_Extent(geom) as bbox
 from districts_boundaries
 group by state_key, district_key;
 
@@ -47,6 +50,8 @@ select
   sum(f_pop) as f_pop,
   sum(tot_lit) as tot_lit,
   ST_Union(geom) as geom,
-  ST_Union(geom_simplified) as geom_simplified,
+  ST_Extent(bbox) as bbox
 from districts_boundaries
 group by state_key;
+
+COMMIT;
