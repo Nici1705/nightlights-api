@@ -31,13 +31,14 @@ admin_import: $(BOUNDARIES_CSVS)
 	cat data/states_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} states_month
 # Import India admin boundaries
 boundaries_import: admin_import
-	shp2pgsql -s 4326 -W "LATIN1" -d data/districts_clipped.shp districts_boundaries | psql ${DATABASE_URL}
+	shp2pgsql -s 4326 -W "LATIN1" -d data/districts_clipped.shp districts_boundaries_import | psql ${DATABASE_URL}
 boundaries_index:
 	# Simplification and other geometry stuff
 	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
 	# Index
 	cat ./sql/add-boundaries-indexes.sql | psql ${DATABASE_URL}
-
+data/districts.topojson:
+	topojson -p -q 1e5 -s 3e-8 data/districts_clipped.shp > data/districts.topojson
 boundaries: boundaries_import boundaries_index
 
 .PHONY: rggvy
