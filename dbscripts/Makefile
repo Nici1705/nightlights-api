@@ -30,21 +30,53 @@ admin_import: $(BOUNDARIES_CSVS)
 	cat data/districts_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts_month
 	cat data/states_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} states_month
 # Import India admin boundaries
-boundaries_import: data/boundaries
+boundaries_import: data/boundaries/districts.shp data/boundaries/states.shp
 	shp2pgsql -s 4326 -W "LATIN1" -d data/boundaries/districts.shp districts_boundaries_import | psql ${DATABASE_URL}
 	shp2pgsql -s 4326 -W "LATIN1" -d data/boundaries/states.shp states_boundaries_import | psql ${DATABASE_URL}
 	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
 boundaries_index: admin_import 
 	# Index
 	cat ./sql/add-boundaries-indexes.sql | psql ${DATABASE_URL}
-data/boundaries:
+
+# Admin boundary preprocessing
+data/boundaries/regions.shp:
 	mkdir -p data/boundaries
-	topojson -p -q 1e5 -s 3e-8 data/districts_clipped.shp > data/boundaries/boundaries.topojson
-	topojson-merge --io=districts_clipped --oo=states -k d.properties.STATE_UT -p -o data/boundaries/boundaries.topojson -- data/boundaries/boundaries.topojson
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/regions.shp shp/india-poly.shp
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/Non\ Subj.\ Polys.shp -nln regions
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/Disp.\ Areas.shp -nln regions
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/jammu-and-kashmir.shp -nln regions
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/pakistan-undisputed.shp -nln regions
+data/boundaries/districts_clipped.shp:
+	ogr2ogr -f 'ESRI Shapefile' -clipsrc shp/india-clip-area.shp data/boundaries/districts_clipped.shp data/DISTRICT_11.shp
+# -dialect sqlite \
+-sql "SELECT d.Geometry, d.DIST_ID, d.DISTRICT, d.STATE_UT, d.TOT_POP, d.F_POP, d.TOT_LIT, group_concat(DISTINCT r.name) regions \
+#  FROM DISTRICT_11 d LEFT JOIN 'data/boundaries/regions.shp'.regions r ON ST_Intersects(r.Geometry, d.Geometry) GROUP BY d.Geometry, d.DIST_ID, d.DISTRICT, d.STATE_UT, d.TOT_POP, d.F_POP, d.TOT_LIT"
+data/boundaries/regions.topojson: data/boundaries/regions.shp
+	topojson -p -q 1e5 -s 3e-8 data/boundaries/regions.shp > data/boundaries/regions.topojson
+	topojson-geojson -o data/boundaries data/boundaries/regions.topojson
+data/boundaries/regions.json: data/boundaries/regions.topojson
+	@
+data/boundaries/boundaries.topojson: data/boundaries/districts_clipped.shp
+	topojson -p -q 1e5 -s 3e-8 data/boundaries/districts_clipped.shp > data/boundaries/boundaries.topojson
+	./scripts/merge-districts.js data/boundaries/boundaries.topojson districts_clipped states
+	# Export GeoJSON (districts_clipped.json and states.json)
 	topojson-geojson -o data/boundaries data/boundaries/boundaries.topojson
-	ogr2ogr -f "ESRI Shapefile" data/boundaries/districts.shp data/districts_clipped.json
-	ogr2ogr -f "ESRI Shapefile" data/boundaries/states.shp data/states.json
-boundaries: boundaries_import boundaries_index
+data/boundaries/districts_clipped.json: data/boundaries/boundaries.topojson
+	echo "exported districts"
+data/boundaries/states.json: data/boundaries/boundaries.topojson
+	echo "exported states"
+data/boundaries/disputed-boundaries.geojson: data/boundaries/regions.topojson data/boundaries/boundaries.topojson
+	./scripts/make_boundaries.js data/boundaries/boundaries.topojson districts_clipped data/boundaries/regions.topojson regions data/boundaries
+data/boundaries/line-of-control.geojson: data/boundaries/disputed-boundaries.geojson
+	@
+data/boundaries/india.geojson: data/boundaries
+data/boundaries/districts.shp: data/boundaries/districts_clipped.json
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/districts.shp data/boundaries/districts_clipped.json
+data/boundaries/states.shp: data/boundaries/states.json
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/states.shp data/boundaries/states.json
+
+# Import all admin area info and boundary data
+boundaries: boundaries_import data/boundaries/disputed-boundaries.geojson boundaries_index
 
 .PHONY: rggvy
 rggvy: $(RGGVY_CSVS)

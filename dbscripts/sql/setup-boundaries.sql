@@ -15,9 +15,10 @@ select
   avg(tot_pop) as tot_pop,
   avg(f_pop) as f_pop,
   avg(tot_lit) as tot_lit,
-  ST_Union(geom) as geom,
+  ST_Union(ST_Buffer(geom, 0)) as geom,
   ST_Extent(geom) as bbox
 from districts_boundaries_import
+where district <> 'DATA NOT AVAILABLE'
 group by state_key, district_key;
 
 create temp table states_meta on commit drop as

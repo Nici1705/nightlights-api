@@ -22,7 +22,7 @@ The scripts here expect that the `data/` directory contains:
   - `districts/*.gz`: monthly districts data - files will be gunzipped and concatenated
   - `states-distribution/*.gz`: state quintile distribution data - files will be gunzipped and concatenated
   - `districts-distribution/*.gz`: district quintile distribution data - files will be gunzipped and concatenated
- - `districts_clipped.*`: the India district boundaries shapefile, clipped appropriately to account for disputed areas
+ - `DISTRICT_11.*`: the India district boundaries shapefile from MLInfo
  - `UD_vills_CCODE01.csv`: Data from the RGGVY program
  - `villages.csv`: Villagecodes and associated lat,lon
 
