@@ -1,10 +1,13 @@
 # Database Setup
 
+These instructions cover 1) importing the summary data into the postgres database
+and 2) generating the vector tiles of village lights for upload to Mapbox.
+
 ## Dependencies
 
 Before running the `Makefile` make sure you have the following installed:
 - Postgres 9.0+ and PostGIS 2.1.7+
-- R 3.1.2
+- R 3.1.2 with the `tidyr`, `dplyr`, and `jsonlite` packages installed
 - ogr2ogr
 - GNU parallel
 - tippecanoe (only if you're generating the sample village tileset)
@@ -19,7 +22,7 @@ The scripts here expect that the `data/` directory contains:
   - `districts/*.gz`: monthly districts data - files will be gunzipped and concatenated
   - `states-distribution/*.gz`: state quintile distribution data - files will be gunzipped and concatenated
   - `districts-distribution/*.gz`: district quintile distribution data - files will be gunzipped and concatenated
- - `DISTRICT_11.*`: the 2011 India district boundaries shapefile from MLInfo
+ - `DISTRICT_11.*`: the India district boundaries shapefile from MLInfo
  - `UD_vills_CCODE01.csv`: Data from the RGGVY program
  - `villages.csv`: Villagecodes and associated lat,lon
 

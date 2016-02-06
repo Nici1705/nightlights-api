@@ -22,11 +22,7 @@ CREATE INDEX states_boundaries_state_key_idx ON states_boundaries (state_key);
 
 -- geometry indexes
 DROP INDEX IF EXISTS districts_boundaries_idx;
-DROP INDEX IF EXISTS districts_boundaries_idx;
 DROP INDEX IF EXISTS states_boundaries_idx;
-DROP INDEX IF EXISTS states_boundaries_simplified_idx;
 
 CREATE INDEX districts_boundaries_idx ON districts_boundaries USING GIST (geom);
-CREATE INDEX districts_boundaries_simplified_idx ON districts_boundaries USING GIST (geom_simplified);
 CREATE INDEX states_boundaries_idx ON states_boundaries USING GIST (geom);
-CREATE INDEX states_boundaries_simplified_idx ON states_boundaries USING GIST (geom_simplified);

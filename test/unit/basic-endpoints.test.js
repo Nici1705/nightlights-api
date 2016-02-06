@@ -32,6 +32,14 @@ describe('basic endpoint input/output', function () {
         }
         resp.statusCode.should.eql(expectedStatusCode);
         resp.payload.trim().length.should.eql(expected.trim().length);
+        var expectedData;
+        try {
+          expectedData = JSON.parse(expected);
+        } catch (e) { }
+        if (expectedData) {
+          var parsed = JSON.parse(resp.payload);
+          parsed.should.be.eql(expectedData);
+        }
         done();
       })
       .catch(function (err) {

@@ -81,6 +81,7 @@ module.exports = [
             'rgvy.villagecode')
         .select(knex.raw(
               'villages.villagecode,' +
+              'villages.name,' +
               'villages.latitude,' +
               'villages.longitude,' +
               'rgvy.energ_date,' +
@@ -90,6 +91,7 @@ module.exports = [
         .where('month', month)
         .groupBy(
             'villages.villagecode',
+            'villages.name',
             'villages.latitude',
             'villages.longitude',
             'rgvy.energ_date')

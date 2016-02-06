@@ -2,6 +2,7 @@
 # Local 
 #########################
 
+summaries.configured.sql
 local.js
 dbscripts/data/*
 .RHistory

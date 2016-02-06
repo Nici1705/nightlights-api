@@ -1,3 +1,3 @@
 /months/2010.01-2010.03/states/bihar
 200
-[{"key":"bihar","year":2010,"month":1,"satellite":"F18","count":2174441,"vis_median":"5.0000"},{"key":"bihar","year":2010,"month":2,"satellite":"F18","count":1550555,"vis_median":"5.0000"},{"key":"bihar","year":2010,"month":3,"satellite":"F18","count":1524727,"vis_median":"5.0000"}]
+[{"key":"bihar","year":2010,"month":1,"satellite":"F18","count":1148261,"vis_median":"-0.5488"},{"key":"bihar","year":2010,"month":2,"satellite":"F18","count":877166,"vis_median":"-0.0909"},{"key":"bihar","year":2010,"month":3,"satellite":"F18","count":821579,"vis_median":"-1.0112"}]

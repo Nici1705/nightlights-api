@@ -1,4 +1,8 @@
 #!/usr/bin/env Rscript
+
+library(dplyr)
+library(tidyr)
+
 sample_data <- read.csv('./data/dbsample.csv')
 
 
@@ -7,7 +11,7 @@ sample_data <- read.csv('./data/dbsample.csv')
 #################################################################
 
 # Summarize by state
-months_by_state <- sample_data %>% group_by(year,month,state) %>% summarize(count=n())
+months_by_state <- sample_data %>% group_by(year,month,skey) %>% summarize(count=n())
 
 # Get the empty counts
 for (i in 1:12) {
@@ -58,7 +62,7 @@ csvt <- "\"String\",\"String\",\"String\",\"Real\",\"Real\""
 for (col in colnames(sample_data)[-1:-5]) {
   csvt<-paste(csvt,"\"Real\"",sep=",")
 }
-write(csvt, './data/sample.csvt',row.names=F)
+write(csvt, './data/sample.csvt')
 
 # Write sample.csv
 write.csv(sample_data, './data/sample.csv',row.names=F)

@@ -6,14 +6,14 @@ _prefs:
   saveCenter: true
 attribution: India district boundaries © 2011-2015 ML Infomap
 center: 
-  - 81.4307
-  - 26.8633
-  - 6
+  - 84.0234
+  - 23.2413
+  - 4
 description: India 2011 census boundaries
 Layer: 
   - id: states
     Datasource: 
-      dbname: india-lights
+      dbname: il
       extent: 68,6,98,36
       geometry_field: ''
       geometry_table: ''
@@ -22,19 +22,12 @@ Layer:
       max_size: 512
       password: ''
       port: 5432
+      srid: ''
       table: |-
         (SELECT geom,
          state_key as key, tot_pop, f_pop, tot_lit
          FROM states_boundaries
          WHERE geom && !bbox!
-         AND z(!scale_denominator!) >= 6
-         UNION ALL
-         SELECT
-           geom_simplified as geom,
-           state_key as key, tot_pop, f_pop, tot_lit
-         FROM states_boundaries
-         WHERE geom && !bbox!
-         AND z(!scale_denominator!) < 6
         ) as state
       type: postgis
       user: anand
@@ -49,7 +42,7 @@ Layer:
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
   - id: districts
     Datasource: 
-      dbname: india-lights
+      dbname: il
       extent: 68,6,98,36
       geometry_field: ''
       geometry_table: ''
@@ -58,26 +51,17 @@ Layer:
       max_size: 512
       password: ''
       port: 5432
+      srid: ''
       table: |-
         (SELECT
            geom,
            db.district_key as key,
            d.state_key state_key,
            tot_pop, f_pop, tot_lit
-         FROM districts_boundaries db, districts d
+         
+         FROM districts_boundaries db
+         JOIN districts d ON db.district_key = d.district_key
          WHERE geom && !bbox!
-         AND z(!scale_denominator!) = 9
-         AND db.district_key = d.district_key
-         UNION ALL
-         SELECT
-           geom_simplified as geom,
-           db.district_key as key,
-           d.state_key state_key,
-          tot_pop, f_pop, tot_lit
-         FROM districts_boundaries db, districts d
-         WHERE geom && !bbox!
-         AND z(!scale_denominator!) <= 8
-         AND db.district_key = d.district_key
         ) as district
       type: postgis
       user: anand
@@ -91,6 +75,26 @@ Layer:
     properties: 
       "buffer-size": 8
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
-maxzoom: 9
+  - id: disputed-boundaries
+    Datasource: 
+      file: /Users/anand/ds/nightlights-api/dbscripts/data/boundaries/disputed-boundaries.geojson
+      layer: disputed-boundaries
+      type: geojson
+    description: ''
+    fields: {}
+    properties: 
+      "buffer-size": 8
+    srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
+  - id: line-of-control
+    Datasource: 
+      file: /Users/anand/ds/nightlights-api/dbscripts/data/boundaries/line-of-control.geojson
+      layer: line-of-control
+      type: geojson
+    description: ''
+    fields: {}
+    properties: 
+      "buffer-size": 8
+    srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
+maxzoom: 10
 minzoom: 0
 name: india-lights - boundaries

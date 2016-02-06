@@ -17,28 +17,66 @@ data/sample.geojson: data/sample.csv
 	ogr2ogr -f "GeoJSON" $@ scripts/sample.vrt
 
 data/sample.mbtiles: data/sample.geojson
-	 tippecanoe -l sample -Z 3 -z 8 -r 2.6 -f -o $@ $<
+	 tippecanoe -l sample -Z 3 -z 8 -r 2 -m 4 -pd -f -o $@ $<
 
-.PHONY: boundaries boundaries_import boundaries_index csv_boundaries
+.PHONY: boundaries admin_import boundaries_import boundaries_index csv_boundaries
 # csv_boundaries is redundant target to create only the csvs
 csv_boundaries: $(BOUNDARIES_CSVS)
-boundaries_import: $(BOUNDARIES_CSVS)
+admin_import: $(BOUNDARIES_CSVS)
 	# Reset db
 	cat sql/init-postgis.sql sql/init-boundaries.sql | psql ${DATABASE_URL}
 	# Import data
 	cat data/districts_meta.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts
 	cat data/districts_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} districts_month
 	cat data/states_month.csv | ./scripts/dbimport.sh ${DATABASE_URL} states_month
-	cat sql/add-boundaries-index.sql | psql ${DATABASE_URL}
-	# Import India admin boundaries from the GADM shapefiles
-	shp2pgsql -s 4326 -W "LATIN1" -d data/DISTRICT_11.shp districts_boundaries | psql ${DATABASE_URL}
+# Import India admin boundaries
+boundaries_import: data/boundaries/districts.shp data/boundaries/states.shp
+	shp2pgsql -s 4326 -W "LATIN1" -d data/boundaries/districts.shp districts_boundaries_import | psql ${DATABASE_URL}
+	shp2pgsql -s 4326 -W "LATIN1" -d data/boundaries/states.shp states_boundaries_import | psql ${DATABASE_URL}
 	cat sql/setup-boundaries.sql | psql ${DATABASE_URL}
-boundaries_index:
-	cat ./sql/simplify-boundaries.sql | psql ${DATABASE_URL}
+boundaries_index: admin_import 
 	# Index
 	cat ./sql/add-boundaries-indexes.sql | psql ${DATABASE_URL}
 
-boundaries: boundaries_import boundaries_index
+# Admin boundary preprocessing
+data/boundaries/regions.shp:
+	mkdir -p data/boundaries
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/regions.shp shp/india-poly.shp
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/Non\ Subj.\ Polys.shp -nln regions
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/Disp.\ Areas.shp -nln regions
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/jammu-and-kashmir.shp -nln regions
+	ogr2ogr -f "ESRI Shapefile" -update -append data/boundaries/regions.shp shp/pakistan-undisputed.shp -nln regions
+data/boundaries/districts_clipped.shp:
+	ogr2ogr -f 'ESRI Shapefile' -clipsrc shp/india-clip-area.shp data/boundaries/districts_clipped.shp data/DISTRICT_11.shp
+# -dialect sqlite \
+-sql "SELECT d.Geometry, d.DIST_ID, d.DISTRICT, d.STATE_UT, d.TOT_POP, d.F_POP, d.TOT_LIT, group_concat(DISTINCT r.name) regions \
+#  FROM DISTRICT_11 d LEFT JOIN 'data/boundaries/regions.shp'.regions r ON ST_Intersects(r.Geometry, d.Geometry) GROUP BY d.Geometry, d.DIST_ID, d.DISTRICT, d.STATE_UT, d.TOT_POP, d.F_POP, d.TOT_LIT"
+data/boundaries/regions.topojson: data/boundaries/regions.shp
+	topojson -p -q 1e5 -s 3e-8 data/boundaries/regions.shp > data/boundaries/regions.topojson
+	topojson-geojson -o data/boundaries data/boundaries/regions.topojson
+data/boundaries/regions.json: data/boundaries/regions.topojson
+	@
+data/boundaries/boundaries.topojson: data/boundaries/districts_clipped.shp
+	topojson -p -q 1e5 -s 3e-8 data/boundaries/districts_clipped.shp > data/boundaries/boundaries.topojson
+	./scripts/merge-districts.js data/boundaries/boundaries.topojson districts_clipped states
+	# Export GeoJSON (districts_clipped.json and states.json)
+	topojson-geojson -o data/boundaries data/boundaries/boundaries.topojson
+data/boundaries/districts_clipped.json: data/boundaries/boundaries.topojson
+	echo "exported districts"
+data/boundaries/states.json: data/boundaries/boundaries.topojson
+	echo "exported states"
+data/boundaries/disputed-boundaries.geojson: data/boundaries/regions.topojson data/boundaries/boundaries.topojson
+	./scripts/make_boundaries.js data/boundaries/boundaries.topojson districts_clipped data/boundaries/regions.topojson regions data/boundaries
+data/boundaries/line-of-control.geojson: data/boundaries/disputed-boundaries.geojson
+	@
+data/boundaries/india.geojson: data/boundaries
+data/boundaries/districts.shp: data/boundaries/districts_clipped.json
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/districts.shp data/boundaries/districts_clipped.json
+data/boundaries/states.shp: data/boundaries/states.json
+	ogr2ogr -f "ESRI Shapefile" data/boundaries/states.shp data/boundaries/states.json
+
+# Import all admin area info and boundary data
+boundaries: boundaries_import data/boundaries/disputed-boundaries.geojson boundaries_index
 
 .PHONY: rggvy
 rggvy: $(RGGVY_CSVS)
@@ -50,17 +88,23 @@ data/rggvy.csv:
 	./scripts/rggvy.R
 
 .PHONY: villages
-villages_import:
+villages_import: data/villages_meta.sql
 	# Reset db
 	cat sql/init-postgis.sql sql/init-villages.sql | psql ${DATABASE_URL}
-	# Village metadata
-	sed '1d;s/,NA,/,,/;/^NA,/d' data/villages.csv | awk 'BEGIN { FS=",";OFS=","; printf "COPY villages FROM STDIN WITH (FORMAT CSV,HEADER '\''FALSE'\'', NULL '\'''\'');\n";} \
-	  { d_key=(tolower($$4)"-"tolower($$5)); gsub(/ +/,"-",d_key); print $$1, $$2, $$3, $$6, d_key } END {print "\\.";}' | psql ${DATABASE_URL}
-	# Village by month data
+	# Import village metadata
+	cat data/villages_meta.sql | psql ${DATABASE_URL}
+	# Import village by month data
 	parallel --bar 'cat {} | gunzip | ./scripts/dbimport.sh ${DATABASE_URL} villages_month ' ::: data/months/*.gz
 villages_index:
 	# Index 
 	cat ./sql/add-villages-indexes.sql | psql ${DATABASE_URL}
+
+data/villages_meta.sql:
+	# Clean village metadata: replace NA with '', remove any commas within quotes, add district key
+	echo "CREATE TEMP TABLE villages_temp AS SELECT * FROM villages WITH NO DATA;" > data/villages_meta.sql
+	sed '1d;s/,NA,/,,/;/^NA,/d' data/villages.csv | awk -F'"' -v OFS='' '{ for (i=2; i<=NF; i+=2) gsub(",", "", $$i) } 1' | awk 'BEGIN { FS=",";OFS=","; printf "COPY villages_temp FROM STDIN WITH (FORMAT CSV,HEADER '\''FALSE'\'', NULL '\'''\'');\n ";} \
+		{ d_key=(tolower($$6)"-"tolower($$7)); gsub(/ +/,"-",d_key); print $$1, $$2, $$3, $$4, $$5, $$8, d_key } END {print "\\.";}' >> data/villages_meta.sql
+	echo "INSERT INTO villages SELECT DISTINCT ON (villagecode) * FROM villages_temp WHERE villagecode IS NOT NULL; DROP TABLE villages_temp;" >> data/villages_meta.sql
 
 villages: villages_import villages_index
 
