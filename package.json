@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/developmentseed/india-lights-api.git"
+    "url": "https://github.com/wbg-bigdata/nightlights-api"
   },
   "author": "Development Seed",
   "license": "BSD",
   "bugs": {
-    "url": "https://github.com/developmentseed/india-lights-api/issues"
+    "url": "https://github.com/wbg-bigdata/nightlights-api/issues"
   },
-  "homepage": "https://github.com/developmentseed/india-lights-api",
+  "homepage": "http://nightlights.io",
   "semistandard": {
     "ignore": [
       "doc/**"
