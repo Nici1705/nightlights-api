@@ -85,7 +85,8 @@ module.exports = [
               'villages.latitude,' +
               'villages.longitude,' +
               'rgvy.energ_date,' +
-              'avg(villages_month.vis_median)::dec(4,2) as vis_median'))
+              'avg(villages_month.vis_median)::dec(4,2) as vis_median,' +
+              'sum(villages_month.count)::dec(4,0) as count'))
         .where('district_key', req.params.district_id)
         .where('year', year)
         .where('month', month)
