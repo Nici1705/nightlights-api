@@ -161,7 +161,7 @@ module.exports = [
  * @apiGroup districts
  *
  * @apiUse TimeInterval
- * @apiParam {String} district_id  District id.
+ * @apiParam {String} district_id  District id (16 digit): state + district + village codes from 2001 census. 
  * @apiSuccess {Object[]} result  Time series data
  * @apiSuccess {String} result.key Identifier of geographical area
  * @apiSuccess {Number} result.year Year of measurement
