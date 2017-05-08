@@ -3,9 +3,9 @@ let knex = require('../connection');
 
 module.exports = [
 /**
- * @api {get} /regions List of all the regions (districts) with display name and id
+ * @api {get} /districts List of all the districts with display name and id
  * @apiExample {curl} Example usage:
- *    curl -i http://api.nightlights.io/regions
+ *    curl -i http://api.nightlights.io/districts
  *
  * @apiGroup regions
  */
